@@ -1,39 +1,41 @@
 import cv2
 import numpy as np
 
-# mouse callback function
-def draw_circle(event, x, y, flag, param):
-    if event == cv2.EVENT_LBUTTONDBLCLK:
-        print(x, ' - ', y)
-        cv2.circle(frame, (x, y), 100, (255, 0, 0), -1)
 
-cv2.namedWindow('frame')
+template = cv2.imread('template.png', 0)
+w, h = template.shape[::-1]
 
-# Capturing video
+# All the 6 methods for comparison in a list
+methods = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED', 'cv2.TM_CCORR',
+            'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
+
 cap = cv2.VideoCapture(0)
 
-# list of circle
-circle_centers = [(50, 110), (200, 150)]
-
-cv2.setMouseCallback('frame', draw_circle)
-
-# loop
 while(True):
-    # Capture frame-by-frame
+    
+    # Input
     ret, frame = cap.read()
     
+    img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # Apply template Matching
+    res = cv2.matchTemplate(img_gray,template, cv2.TM_CCOEFF_NORMED)
 
+    threshold = 0.8
+    loc = np.where(res >= threshold)
+    
+    for pt in zip(*loc[::-1]):
+        cv2.rectangle(frame, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
+    
 
-    if len(circle_centers) == 0:
-        pass
-    else:
-        for cen in circle_centers:
-            cv2.circle(frame, cen, 50, (255, 0, 200), -1)
-
-    # display the frame
+    # Display the resulting frame
     cv2.imshow('frame', frame)
 
-    if cv2.waitKey(20) & 0xFF == 27:
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+# When everything done, release the capture
+cap.release()
 cv2.destroyAllWindows()
+
+
